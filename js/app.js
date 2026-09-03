@@ -1,3 +1,8 @@
+
+
+
+
+
 /* ============================
    CART — LocalStorage Helpers
 ============================ */
@@ -102,7 +107,7 @@ function createProductCard(product) {
 }
 
 /* ============================
-   NAVBAR — Mobile Menu + Search
+   NAVBAR — Mobile Menu + Search + Home Page
 ============================ */
 document.addEventListener("DOMContentLoaded", () => {
   updateCartCount();
@@ -126,14 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Render featured products on home page
   const featuredContainer = document.getElementById("featuredProducts");
   if (featuredContainer) {
     const featured = products.slice(0, 8);
     featuredContainer.innerHTML = featured.map(createProductCard).join("");
   }
 
-  // Newsletter form (home page)
   const newsletterForm = document.getElementById("newsletterForm");
   if (newsletterForm) {
     newsletterForm.addEventListener("submit", (e) => {
@@ -142,12 +145,14 @@ document.addEventListener("DOMContentLoaded", () => {
       newsletterForm.reset();
     });
   }
-});/* ============================
+});
+
+/* ============================
    PRODUCTS PAGE LOGIC
 ============================ */
 document.addEventListener("DOMContentLoaded", () => {
   const productsGrid = document.getElementById("productsGrid");
-  if (!productsGrid) return; // only run on products.html
+  if (!productsGrid) return;
 
   const categoryFilter = document.getElementById("categoryFilter");
   const priceFilter = document.getElementById("priceFilter");
@@ -155,7 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("productSearch");
   const resultsCount = document.getElementById("resultsCount");
 
-  // Populate category dropdown dynamically
   const categories = [...new Set(products.map(p => p.category))];
   categories.forEach(cat => {
     const option = document.createElement("option");
@@ -164,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
     categoryFilter.appendChild(option);
   });
 
-  // Check URL for search query (coming from navbar search)
   const urlParams = new URLSearchParams(window.location.search);
   const urlSearch = urlParams.get("search");
   if (urlSearch) searchInput.value = urlSearch;
@@ -172,19 +175,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderProducts() {
     let filtered = [...products];
 
-    // Search filter
     const searchTerm = searchInput.value.trim().toLowerCase();
     if (searchTerm) {
       filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
     }
 
-    // Category filter
     const selectedCategory = categoryFilter.value;
     if (selectedCategory !== "all") {
       filtered = filtered.filter(p => p.category === selectedCategory);
     }
 
-    // Price filter
     const selectedPrice = priceFilter.value;
     if (selectedPrice !== "all") {
       const [min, max] = selectedPrice.split("-").map(Number);
@@ -194,7 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Sorting
     const sortValue = sortSelect.value;
     if (sortValue === "low-high") {
       filtered.sort((a, b) => getDiscountedPrice(a.price, a.discount) - getDiscountedPrice(b.price, b.discount));
@@ -202,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
       filtered.sort((a, b) => getDiscountedPrice(b.price, b.discount) - getDiscountedPrice(a.price, a.discount));
     }
 
-    // Render
     if (filtered.length === 0) {
       productsGrid.innerHTML = `<p class="no-results">No products found.</p>`;
     } else {
@@ -217,4 +215,214 @@ document.addEventListener("DOMContentLoaded", () => {
   searchInput.addEventListener("input", renderProducts);
 
   renderProducts();
+});
+
+/* ============================
+   PRODUCT DETAILS PAGE LOGIC
+============================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const detailsContainer = document.getElementById("productDetails");
+  if (!detailsContainer) return;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = parseInt(urlParams.get("id"));
+  const product = products.find(p => p.id === productId);
+
+  if (!product) {
+    detailsContainer.innerHTML = `<p class="no-results">Product not found.</p>`;
+    return;
+  }
+
+  const finalPrice = getDiscountedPrice(product.price, product.discount);
+
+  detailsContainer.innerHTML = `
+    <div class="details-container">
+      <div class="details-img">
+        <img src="${product.image}" alt="${product.name}">
+      </div>
+      <div class="details-info">
+        <h1>${product.name}</h1>
+        <div class="rating">${"⭐".repeat(Math.round(product.rating))} (${product.rating})</div>
+        <div class="price-row">
+          <span class="price">Rs. ${finalPrice}</span>
+          ${product.discount > 0 ? `<span class="old-price">Rs. ${product.price}</span> <span class="discount-badge">${product.discount}% OFF</span>` : ""}
+        </div>
+        <p class="details-desc">${product.description}</p>
+        <p class="stock-info">${product.stock > 0 ? `✅ In Stock (${product.stock} available)` : "❌ Out of Stock"}</p>
+
+        <div class="qty-selector">
+          <label>Quantity:</label>
+          <button id="decreaseQty">-</button>
+          <span id="qtyValue">1</span>
+          <button id="increaseQty">+</button>
+        </div>
+
+        <button class="btn-primary add-cart-btn-large" id="detailsAddCart">Add to Cart</button>
+      </div>
+    </div>
+  `;
+
+  let qty = 1;
+  const qtyValue = document.getElementById("qtyValue");
+  document.getElementById("increaseQty").addEventListener("click", () => {
+    if (qty < product.stock) {
+      qty++;
+      qtyValue.textContent = qty;
+    }
+  });
+  document.getElementById("decreaseQty").addEventListener("click", () => {
+    if (qty > 1) {
+      qty--;
+      qtyValue.textContent = qty;
+    }
+  });
+  document.getElementById("detailsAddCart").addEventListener("click", () => {
+    addToCart(product.id, qty);
+  });
+
+  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  document.getElementById("relatedProducts").innerHTML = related.map(createProductCard).join("");
+});
+
+/* ============================
+   CART PAGE LOGIC
+============================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const cartItemsContainer = document.getElementById("cartItemsContainer");
+  if (!cartItemsContainer) return;
+
+  renderCartPage();
+
+  function renderCartPage() {
+    const cart = getCart();
+
+    if (cart.length === 0) {
+      cartItemsContainer.innerHTML = `<p class="no-results">Your cart is empty. <a href="products.html">Shop now</a></p>`;
+      document.getElementById("cartSummary").innerHTML = "";
+      return;
+    }
+
+    let itemsHTML = "";
+    let subtotal = 0;
+    let totalItems = 0;
+
+    cart.forEach(item => {
+      const product = products.find(p => p.id === item.id);
+      if (!product) return;
+      const finalPrice = getDiscountedPrice(product.price, product.discount);
+      const lineTotal = finalPrice * item.qty;
+      subtotal += lineTotal;
+      totalItems += item.qty;
+
+      itemsHTML += `
+        <div class="cart-item">
+          <img src="${product.image}" alt="${product.name}">
+          <div class="cart-item-info">
+            <h3>${product.name}</h3>
+            <p class="price">Rs. ${finalPrice}</p>
+          </div>
+          <div class="cart-item-qty">
+            <button onclick="changeCartQty(${product.id}, ${item.qty - 1})">-</button>
+            <span>${item.qty}</span>
+            <button onclick="changeCartQty(${product.id}, ${item.qty + 1})">+</button>
+          </div>
+          <div class="cart-item-total">Rs. ${lineTotal}</div>
+          <button class="remove-btn" onclick="removeCartItem(${product.id})">✕</button>
+        </div>
+      `;
+    });
+
+    cartItemsContainer.innerHTML = itemsHTML;
+
+    document.getElementById("cartSummary").innerHTML = `
+      <div class="summary-row"><span>Total Items:</span><span>${totalItems}</span></div>
+      <div class="summary-row"><span>Subtotal:</span><span>Rs. ${subtotal}</span></div>
+      <div class="summary-row total-row"><span>Total:</span><span>Rs. ${subtotal}</span></div>
+      <a href="checkout.html" class="btn-primary checkout-btn">Proceed to Checkout</a>
+    `;
+  }
+
+  window.changeCartQty = function(productId, newQty) {
+    updateQty(productId, newQty);
+    renderCartPage();
+  };
+
+  window.removeCartItem = function(productId) {
+    removeFromCart(productId);
+    renderCartPage();
+  };
+});
+
+/* ============================
+   CHECKOUT PAGE LOGIC
+============================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const checkoutForm = document.getElementById("checkoutForm");
+  if (!checkoutForm) return;
+
+  const cart = getCart();
+  if (cart.length === 0) {
+    const container = document.querySelector(".checkout-container");
+    if (container) {
+      container.innerHTML = `<p class="no-results">Your cart is empty. <a href="products.html">Shop now</a></p>`;
+    }
+  } else {
+    renderOrderSummary();
+  }
+
+  function renderOrderSummary() {
+    let subtotal = 0;
+    let itemsHTML = "";
+
+    cart.forEach(item => {
+      const product = products.find(p => p.id === item.id);
+      if (!product) return;
+      const finalPrice = getDiscountedPrice(product.price, product.discount);
+      const lineTotal = finalPrice * item.qty;
+      subtotal += lineTotal;
+
+      itemsHTML += `
+        <div class="summary-item">
+          <span>${product.name} x${item.qty}</span>
+          <span>Rs. ${lineTotal}</span>
+        </div>
+      `;
+    });
+
+    document.getElementById("orderSummary").innerHTML = `
+      <h3>Order Summary</h3>
+      ${itemsHTML}
+      <div class="summary-row total-row">
+        <span>Total Amount:</span><span>Rs. ${subtotal}</span>
+      </div>
+    `;
+  }
+
+  checkoutForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const orderData = {
+      orderNumber: "ORD" + Math.floor(100000 + Math.random() * 900000),
+      name: document.getElementById("custName").value,
+      email: document.getElementById("custEmail").value,
+      phone: document.getElementById("custPhone").value,
+      address: document.getElementById("custAddress").value,
+      city: document.getElementById("custCity").value,
+      postal: document.getElementById("custPostal").value,
+      payment: document.getElementById("paymentMethod").value,
+      items: cart.map(item => {
+        const product = products.find(p => p.id === item.id);
+        const finalPrice = getDiscountedPrice(product.price, product.discount);
+        return { name: product.name, qty: item.qty, total: finalPrice * item.qty };
+      }),
+      total: cart.reduce((sum, item) => {
+        const product = products.find(p => p.id === item.id);
+        return sum + getDiscountedPrice(product.price, product.discount) * item.qty;
+      }, 0)
+    };
+
+    localStorage.setItem("lastOrder", JSON.stringify(orderData));
+    localStorage.removeItem("cart");
+    window.location.href = "order-confirmation.html";
+  });
 });

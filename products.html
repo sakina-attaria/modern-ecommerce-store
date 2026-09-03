@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Products — ShopEase</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<header class="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="logo">Shop<span>Ease</span></a>
+    <div class="search-bar">
+      <input type="text" id="navSearch" placeholder="Search products...">
+      <button id="navSearchBtn">🔍</button>
+    </div>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="cart.html">Cart</a>
+    </nav>
+    <a href="cart.html" class="cart-icon">
+      🛒 <span id="cartCount" class="cart-count">0</span>
+    </a>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+  </div>
+</header>
+
+<!-- ===== PAGE HEADER ===== -->
+<section class="page-header">
+  <h1>All Products</h1>
+</section>
+
+<!-- ===== FILTERS BAR ===== -->
+<section class="filters-bar">
+  <input type="text" id="productSearch" placeholder="Search products...">
+
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
+
+  <select id="priceFilter">
+    <option value="all">All Prices</option>
+    <option value="0-2000">Under Rs. 2000</option>
+    <option value="2000-4000">Rs. 2000 - 4000</option>
+    <option value="4000-6000">Rs. 4000 - 6000</option>
+    <option value="6000-999999">Above Rs. 6000</option>
+  </select>
+
+  <select id="sortSelect">
+    <option value="default">Sort By</option>
+    <option value="low-high">Price: Low to High</option>
+    <option value="high-low">Price: High to Low</option>
+  </select>
+</section>
+
+<p id="resultsCount" class="results-count"></p>
+
+<!-- ===== PRODUCTS GRID ===== -->
+<section class="products-page-section">
+  <div class="product-grid" id="productsGrid">
+    <!-- JS injects products here -->
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-col">
+      <h3>ShopEase</h3>
+      <p>Your trusted online shopping destination.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="cart.html">Cart</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p>Email: support@shopease.com</p>
+      <p>Phone: +92 300 1234567</p>
+    </div>
+  </div>
+  <p class="footer-bottom">© 2026 ShopEase. All rights reserved.</p>
+</footer>
+
+<script src="js/products-data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

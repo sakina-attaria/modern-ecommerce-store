@@ -1,0 +1,67 @@
+/* ============================
+   PRODUCT DETAILS PAGE LOGIC
+============================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const detailsContainer = document.getElementById("productDetails");
+  if (!detailsContainer) return; // only run on product.html
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = parseInt(urlParams.get("id"));
+  const product = products.find(p => p.id === productId);
+
+  if (!product) {
+    detailsContainer.innerHTML = `<p class="no-results">Product not found.</p>`;
+    return;
+  }
+
+  const finalPrice = getDiscountedPrice(product.price, product.discount);
+
+  detailsContainer.innerHTML = `
+    <div class="details-container">
+      <div class="details-img">
+        <img src="${product.image}" alt="${product.name}">
+      </div>
+      <div class="details-info">
+        <h1>${product.name}</h1>
+        <div class="rating">${"⭐".repeat(Math.round(product.rating))} (${product.rating})</div>
+        <div class="price-row">
+          <span class="price">Rs. ${finalPrice}</span>
+          ${product.discount > 0 ? `<span class="old-price">Rs. ${product.price}</span> <span class="discount-badge">${product.discount}% OFF</span>` : ""}
+        </div>
+        <p class="details-desc">${product.description}</p>
+        <p class="stock-info">${product.stock > 0 ? `✅ In Stock (${product.stock} available)` : "❌ Out of Stock"}</p>
+
+        <div class="qty-selector">
+          <label>Quantity:</label>
+          <button id="decreaseQty">-</button>
+          <span id="qtyValue">1</span>
+          <button id="increaseQty">+</button>
+        </div>
+
+        <button class="btn-primary add-cart-btn-large" id="detailsAddCart">Add to Cart</button>
+      </div>
+    </div>
+  `;
+
+  let qty = 1;
+  const qtyValue = document.getElementById("qtyValue");
+  document.getElementById("increaseQty").addEventListener("click", () => {
+    if (qty < product.stock) {
+      qty++;
+      qtyValue.textContent = qty;
+    }
+  });
+  document.getElementById("decreaseQty").addEventListener("click", () => {
+    if (qty > 1) {
+      qty--;
+      qtyValue.textContent = qty;
+    }
+  });
+  document.getElementById("detailsAddCart").addEventListener("click", () => {
+    addToCart(product.id, qty);
+  });
+
+  // Related products (same category, excluding current)
+  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  document.getElementById("relatedProducts").innerHTML = related.map(createProductCard).join("");
+});
